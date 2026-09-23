@@ -1,0 +1,38 @@
+* ============================================================
+* THS7314 - Modelo de comportamiento (NO es el modelo oficial de TI)
+* Basado en el datasheet SLOS513A:
+*   - Entrada: 800 kOhm a GND, 2 pF
+*   - Desplazamiento interno +145 mV y ganancia x2 (6 dB)
+*   - Filtro Butterworth de 5.o orden, -3 dB a 8,5 MHz
+*   - Salida limitada a ~0,1 V .. VS-0,1 V (rail-to-rail)
+*   - Consumo de reposo ~17 mA a 5 V
+* No modela: sync-tip clamp (modo AC), ruido, distorsion.
+*
+* Orden de pines = numeracion del SOIC-8:
+*   1 CH1_IN  2 CH2_IN  3 CH3_IN  4 VS+  5 GND  6 CH3_OUT  7 CH2_OUT  8 CH1_OUT
+* ============================================================
+.subckt THS7314 in1 in2 in3 vs gnd out3 out2 out1
+X1 in1 out1 vs gnd THS7314_CH
+X2 in2 out2 vs gnd THS7314_CH
+X3 in3 out3 vs gnd THS7314_CH
+* Consumo de reposo aproximado (17 mA a 5 V)
+Rq vs gnd 294
+.ends THS7314
+
+.subckt THS7314_CH in out vs gnd
+Rin  in gnd 800k
+Cin  in gnd 2p
+* Fuente interna: 4*(Vin+0,145). El filtro doblemente terminado divide
+* entre 2, asi que a la salida queda 2*(Vin+0,145) = 2*Vin + 0,29 V
+Bsrc src gnd V = 4*(V(in,gnd) + 0.145)
+Rs   src n1 1k
+* Butterworth 5.o orden, R0 = 1 kOhm, fc = 8,5 MHz
+C1   n1 gnd 11.57p
+L2   n1 n2  30.30u
+C3   n2 gnd 37.45p
+L4   n2 n3  30.30u
+C5   n3 gnd 11.57p
+RL   n3 gnd 1k
+* Buffer de salida con limites de alimentacion
+Bout out gnd V = max(0.1, min(V(vs,gnd)-0.1, V(n3,gnd)))
+.ends THS7314_CH
